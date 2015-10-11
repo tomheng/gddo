@@ -20,6 +20,7 @@ func init() {
 		prefix:          "code.google.com/",
 		get:             getGoogleDir,
 		getPresentation: getGooglePresentation,
+		checkRedirect:   checkGoogleRedirect,
 	})
 }
 
@@ -28,7 +29,29 @@ var (
 	googleRevisionRe = regexp.MustCompile(`<h2>(?:[^ ]+ - )?Revision *([^:]+):`)
 	googleEtagRe     = regexp.MustCompile(`^(hg|git|svn)-`)
 	googleFileRe     = regexp.MustCompile(`<li><a href="([^"]+)"`)
+	googleRedirctMap = []struct {
+		oldRepo string
+		newRepo string
+	}{
+		{"code.google.com/p/go.tools/godoc/static", "golang.org/x/playground/app/static"},
+		{"code.google.com/p/go.tools/playground", "golang.org/x/playground"},
+		{"code.google.com/p/go.talks/present", "golang.org/x/tools/present"},
+		{"code.google.com/p/go.example", "github.com/golang/example"},
+		{"code.google.com/p/go.", "golang.org/x/"},
+	}
 )
+
+//check repo if redirect
+func checkGoogleRedirect(importPath string) (newRepo string, ok bool) {
+	for _, v := range googleRedirctMap {
+		if strings.HasPrefix(importPath, v.oldRepo) {
+			newRepo = v.newRepo + importPath[len(v.oldRepo):]
+			ok = true
+			break
+		}
+	}
+	return
+}
 
 func getGoogleDir(client *http.Client, match map[string]string, savedEtag string) (*Directory, error) {
 	c := &httpClient{client: client}

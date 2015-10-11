@@ -115,6 +115,7 @@ type service struct {
 	get             func(*http.Client, map[string]string, string) (*Directory, error)
 	getPresentation func(*http.Client, map[string]string) (*Presentation, error)
 	getProject      func(*http.Client, map[string]string) (*Project, error)
+	checkRedirect   func(importPath string) (newRepo string, ok bool)
 }
 
 var services []*service
@@ -137,6 +138,11 @@ func (s *service) match(importPath string) (map[string]string, error) {
 			return nil, NotFoundError{Message: "Import path prefix matches known service, but regexp does not."}
 		}
 		return nil, nil
+	}
+	if s.checkRedirect != nil {
+		if redirect, ok := s.checkRedirect(importPath); ok {
+			return nil, NotFoundError{Message: "Project Moved Permanently", Redirect: redirect}
+		}
 	}
 	match := map[string]string{"importPath": importPath}
 	for i, n := range s.pattern.SubexpNames() {

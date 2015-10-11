@@ -270,3 +270,17 @@ func TestGetDynamic(t *testing.T) {
 		}
 	}
 }
+func TestGoSubRepoRedirect(t *testing.T) {
+	for oldRepo, newRepo := range map[string]string{
+		"code.google.com/p/go.tools/cmd/cover":    "golang.org/x/tools/cmd/cover",
+		"code.google.com/p/go.talks/present":      "golang.org/x/tools/present",
+		"code.google.com/p/go.tools/godoc/static": "golang.org/x/playground/app/static",
+		"code.google.com/p/go.tools/playground":   "golang.org/x/playground",
+		"code.google.com/p/go.example":            "github.com/golang/example",
+	} {
+		_, err := Get(http.DefaultClient, oldRepo, "")
+		if e, ok := err.(NotFoundError); !ok || e.Redirect != newRepo {
+			t.Fatalf("got %s, want %s", e.Redirect, newRepo)
+		}
+	}
+}
